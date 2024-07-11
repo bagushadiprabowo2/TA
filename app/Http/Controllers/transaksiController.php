@@ -4,9 +4,18 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\NotifikasiController;
+use Carbon\Carbon;
 
 class transaksiController extends Controller
 {
+    protected $notifikasiController;
+
+    public function __construct(NotifikasiController $notifikasiController)
+    {
+        $this->notifikasiController = $notifikasiController;
+    }
+
     public function index()
     {
     	$transaksi = DB::table('transaksi')->get();
@@ -21,7 +30,13 @@ class transaksiController extends Controller
         $riwayat_transaksi = DB::table('transaksi')->where('id_pelanggan', session()->get('nama'))->get();
         $pengguna = DB::table('pengguna')->where('id_pengguna', session()->get('id_pengguna'))->get();
         
-		return view('front end.riwayattransaksi',['riwayat_transaksi' => $riwayat_transaksi,'saldo'=>$saldo,'pengguna'=>$pengguna]);
+        $senderType = session()->get('level') == 3 ? 'pelapak' : 'pelanggan';
+        $notifikasiCounts = $this->notifikasiController->getCountByDestinationId(session()->get('id_pengguna'), $senderType);
+
+        $notifications = $this->notifikasiController->getByDestinationId(session()->get('id_pengguna'), $senderType);
+
+		return view('front end.riwayattransaksi',['riwayat_transaksi' => $riwayat_transaksi,'saldo'=>$saldo,'pengguna'=>$pengguna,
+            'notifikasiCounts'=>$notifikasiCounts, 'notifications' => $notifications]);
  
     }
 
@@ -31,7 +46,12 @@ class transaksiController extends Controller
         $riwayat_transaksi_pelapak = DB::table('transaksi')->where('id_pelapak', session()->get('id_pengguna'))->get();
         $pengguna = DB::table('pengguna')->where('id_pengguna', session()->get('id_pengguna'))->get();
         
-        return view('front end.riwayattransaksi_pelapak',['riwayat_transaksi_pelapak' => $riwayat_transaksi_pelapak,'saldo'=>$saldo,'pengguna'=>$pengguna]);
+        $senderType = session()->get('level') == 3 ? 'pelapak' : 'pelanggan';
+        $notifikasiCounts = $this->notifikasiController->getCountByDestinationId(session()->get('id_pengguna'), $senderType);
+        $notifications = $this->notifikasiController->getByDestinationId(session()->get('id_pengguna'), $senderType);
+
+        return view('front end.riwayattransaksi_pelapak',['riwayat_transaksi_pelapak' => $riwayat_transaksi_pelapak,'saldo'=>$saldo,'pengguna'=>$pengguna,
+        'notifikasiCounts'=>$notifikasiCounts, 'notifications' => $notifications]);
  
     }
 
@@ -40,7 +60,13 @@ class transaksiController extends Controller
         $saldo = \DB::table('saldo')->where('id_pengguna', session()->get('id_pengguna'))->value('total');
         $riwayat_topup = DB::table('top_up')->where('id_pengguna', session()->get('id_pengguna'))->get();
         $pengguna = DB::table('pengguna')->where('id_pengguna', session()->get('id_pengguna'))->get();
-        return view('front end.riwayattopup',['riwayat_topup' => $riwayat_topup,'saldo'=>$saldo,'pengguna'=>$pengguna]);
+
+        $senderType = session()->get('level') == 3 ? 'pelapak' : 'pelanggan';
+        $notifikasiCounts = $this->notifikasiController->getCountByDestinationId(session()->get('id_pengguna'), $senderType);
+        $notifications = $this->notifikasiController->getByDestinationId(session()->get('id_pengguna'), $senderType);
+
+        return view('front end.riwayattopup',['riwayat_topup' => $riwayat_topup,'saldo'=>$saldo,'pengguna'=>$pengguna,
+        'notifikasiCounts'=>$notifikasiCounts, 'notifications' => $notifications]);
  
     }
 
@@ -192,6 +218,17 @@ class transaksiController extends Controller
             $tot_pemilik = \DB::table('saldo')->where('id_pengguna', $request->id_pelapak)->value('total');
             $hasil_i = $tot_pemilik + $harga_;
             \DB::table('saldo')->where('id_pengguna', $request->id_pelapak)->update(['total' => $hasil_i]);
+
+            $senderType = session()->get('level') == 2 ? 'pelapak' : 'pelanggan';
+            DB::table('notifikasi')->insert([
+                'sender_type'       => $senderType,
+                'sender_id'         =>  session()->get('id_pengguna'),
+                'destination_id'    =>  $request->id_pelapak,
+                'message'           => 'Ada transaksi baru masuk dari '. session()->get('nama'),
+                'status'            => 'unread',
+                'created_at'        => Carbon::now(),
+                'updated_at'        => Carbon::now(),
+            ]);
             return redirect('index');
         } else {
             return redirect('/transaksi/topup/' . session()->get('id_pengguna'))->with('error', '');
@@ -257,7 +294,11 @@ class transaksiController extends Controller
     $saldo = \DB::table('saldo')->where('id_pengguna', session()->get('id_pengguna'))->value('total');
     $pengguna = DB::table('pengguna')->where('id_pengguna', session()->get('id_pengguna'))->get();
     // dd($transaksi[0]);
-    return view('front end.transaksi_detail',['transaksi'=>$transaksi,'saldo'=>$saldo,'pengguna'=>$pengguna]);
+    $senderType = session()->get('level') == 3 ? 'pelapak' : 'pelanggan';
+    $notifikasiCounts = $this->notifikasiController->getCountByDestinationId(session()->get('id_pengguna'), $senderType);
+    $notifications = $this->notifikasiController->getByDestinationId(session()->get('id_pengguna'), $senderType);
+    return view('front end.transaksi_detail',['transaksi'=>$transaksi,'saldo'=>$saldo,'pengguna'=>$pengguna,
+    'notifikasiCounts'=>$notifikasiCounts, 'notifications' => $notifications]);
     }
 
     public function komen($usaha)
@@ -322,8 +363,13 @@ class transaksiController extends Controller
         ->where(['id_pelapak'=>$id,'status'=>'1'])->orderBy('id_transaksi', 'DESC')->get();
         if($htg_transaksi>0){
         $upload = DB::table('upload')->get();
+        $senderType = session()->get('level') == 3 ? 'pelapak' : 'pelanggan';
+        $notifikasiCounts = $this->notifikasiController->getCountByDestinationId(session()->get('id_pengguna'), $senderType);
+        $notifications = $this->notifikasiController->getByDestinationId(session()->get('id_pengguna'), $senderType);
+
         return view('front end.transaksi_pelapak',['transaksi_pelapak' => $transaksi_pelapak, 
-            'upload' => $upload, 'saldo'=>$saldo,'transaksi'=>$transaksi,'pengguna'=>$pengguna]);
+            'upload' => $upload, 'saldo'=>$saldo,'transaksi'=>$transaksi,'pengguna'=>$pengguna,
+    'notifikasiCounts'=>$notifikasiCounts, 'notifications' => $notifications]);
     }
     return redirect()->back();
  
@@ -434,6 +480,20 @@ class transaksiController extends Controller
             $data['foto1']             = $newName1;
             $setelah = DB::table('upload')->insert($data);
         }
+
+        $pengguna = DB::table('pengguna')->where('nama', $request->id_pelanggan)->first();
+
+        $senderType = session()->get('level') == 2 ? 'pelapak' : 'pelanggan';
+
+        DB::table('notifikasi')->insert([
+            'sender_type'       => $senderType,
+            'sender_id'         =>  session()->get('id_pengguna'),
+            'destination_id'    =>  $pengguna ? $pengguna->id_pengguna : 0,
+            'message'           => 'Ada upload foto dari '. session()->get('nama'),
+            'status'            => 'unread',
+            'created_at'        => Carbon::now(),
+            'updated_at'        => Carbon::now(),
+        ]);
         return redirect('transaksi/transaksi_pelapak/'.session()->get('id_pengguna'));
     }
     

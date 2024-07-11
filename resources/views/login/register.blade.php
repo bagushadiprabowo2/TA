@@ -83,7 +83,7 @@
                         <i class="ti-lock text-primary"></i>
                       </span>
                     </div>
-                    <input type="text" name="password" class="form-control form-control-lg border-left-0" placeholder="Masukkan password anda">                        
+                    <input type="password" name="password" class="form-control form-control-lg border-left-0" placeholder="Masukkan password anda">                        
                   </div>
                 </div>
 

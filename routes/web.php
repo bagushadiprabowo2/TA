@@ -105,3 +105,6 @@ Route::get('/admin','transaksiController@show');
 Route::get('/contact','transaksiController@contact');
 Route::get('/transaksi/kode/generate/{id}','transaksiController@buatkode');
 Route::get('/transaksi/toupup/saldo/{id}/{pengguna}/{kode}','transaksiController@toupupsaldo');
+
+Route::post('/reset-notification/{id}', 'NotifikasiController@resetNotification')->name('reset.notification');
+

@@ -156,11 +156,11 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
     </div>
     <div class="form-group">
       <label for="exampleInputEmail1">Tanggal Pesan</label>
-      <input type="text" class="form-control" name="tanggal_pesan" id="tglpesan" readonly="" value="{{ date('m/d/Y') }}">
+      <input type="text" class="form-control" name="tanggal_pesan" id="tglpesan" readonly="" value="{{ date('d/m/Y') }}">
     </div>
     <div class="form-group">
       <label for="exampleInputPassword1">Tanggal Hunting</label>
-      <input type="date" class="form-control" name="tanggal_hunting" id="tglhunting" value="{{ date('Y-m-d') }}" min="{{ date('Y-m-d') }}">
+      <input type="date" class="form-control" name="tanggal_hunting" id="tglhunting" value="{{ date('Y-m-d') }}" min="{{ date('d/m/Y') }}">
     </div>
     <div class="form-group">
       <label for="exampleInputEmail1">Paket Yang Dipilih</label>

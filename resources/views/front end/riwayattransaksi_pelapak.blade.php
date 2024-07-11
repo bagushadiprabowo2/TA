@@ -40,6 +40,43 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 	<link href="{{asset('//fonts.googleapis.com/css?family=Inconsolata:400,700')}}" rel="stylesheet">
 	<link href="{{asset('//fonts.googleapis.com/css?family=Poppins:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800')}}"
 	    rel="stylesheet">
+		<style>
+			.notification {
+				position: relative;
+				display: inline-block;
+			}
+	
+			.notification .notif-box {
+				display: none;
+				position: absolute;
+				right: 0;
+				background-color: #f9f9f9;
+				min-width: 200px;
+				box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+				z-index: 1;
+			}
+	
+			.notification .notif-box a {
+				color: black;
+				padding: 12px 16px;
+				text-decoration: none;
+				display: block;
+			}
+	
+			.notification .notif-box a:hover {
+				background-color: #f1f1f1;
+			}
+	
+			.notification .badge {
+				position: absolute;
+				top: -10px;
+				right: -10px;
+				padding: 5px 10px;
+				border-radius: 50%;
+				background-color: red;
+				color: white;
+			}
+		</style>
 </head>
 
 <body>
@@ -77,18 +114,29 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 									<a class="dropdown-item" href="{{url ('/transaksi/topup'). '/'.$b->id_pengguna}}" style="text-transform: none;"><span class="fa fa-bitcoin" aria-hidden="true"></span> Top Up</a>
 									@endforeach
 									@endif
-									@if(session()->get('level')==2)
-									<a class="dropdown-item" href="{{url ('transaksi/riwayat_transaksi_pelapak')}}" style="text-transform: none;"><span class="fa fa-list" aria-hidden="true"></span> Riwayat Transaksi</a>
-									@endif
-									@if(session()->get('level')==3)
-									<a class="dropdown-item" href="{{url ('transaksi/riwayat_transaksi')}}" style="text-transform: none;"><span class="fa fa-list" aria-hidden="true"></span> Riwayat Transaksi</a>
-									@endif
 									<a class="dropdown-item" href="{{ url('logout') }}" style="text-transform: none;"><span class="fa fa-power-off" aria-hidden="true"></span> Log Out</a>
 								</div>
 							</div>
 						</li>
 						
 						<li class="galssescart galssescart2 cart cart box_1">
+							<div class="notification" data-notification-id="{{ session()->get('id_pengguna') }}">
+								<i class="fas fa-bell" id="notif-icon" style="font-size: 24px; cursor: pointer;"></i>
+									@if($notifikasiCounts)
+										<span class="badge" id="notif-count">
+											{{ $notifikasiCounts->total }}
+										</span>
+									@endif
+								<div class="notif-box" id="notif-box">
+									@foreach($notifications as $notification)
+										@if (session()->get('level') == 2)
+									 		<a href="{{url ('transaksi/transaksi_pelapak').'/'.session()->get('id_pengguna')}}">{{$notification->message}}</a>
+										@elseif (session()->get('level') == 3)
+											<a href="{{url ('/transaksi/transaksi_detail').'/'.session()->get('nama')}}">{{$notification->message}}</a>
+										@endif
+									@endforeach
+								</div>
+							</div>
 							@if (session()->get('level') == 2)
 							<a href="{{url ('transaksi/transaksi_pelapak').'/'.session()->get('id_pengguna')}}"><button class="top_googles_cart" type="submit" name="submit" value="">
 									TRANSAKSI
@@ -126,6 +174,16 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 								<span class="sr-only">(current)</span>
 							</a>
 						</li>
+						@if(session()->get('level')==2)
+						<li class="nav-item">
+							<a class="nav-link" href="{{url ('transaksi/riwayat_transaksi_pelapak')}}" style="text-transform: none;"> RIWAYAT TRANSAKSI</a>
+						</li>
+						@endif
+						@if(session()->get('level')==3)
+						<li class="nav-item">
+							<a class="nav-link" href="{{url ('transaksi/riwayat_transaksi')}}" style="text-transform: none;"> RIWAYAT TRANSAKSI</a>
+						</li>
+						@endif
 						@if (session()->get('level') == 2)
 						<li class="nav-item">
 							<a class="nav-link" href="{{url ('usahaku')}}">USAHAKU</a>
@@ -360,6 +418,57 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
     </script>
     <!--// end-smoth-scrolling -->
 
+	<!--// notif-script -->
+	<script>
+        document.getElementById('notif-icon').onclick = function() {
+            var notifBox = document.getElementById('notif-box');
+            if (notifBox.style.display === "block") {
+                notifBox.style.display = "none";
+            } else {
+                notifBox.style.display = "block";
+            }
+        };
+
+        // Close the notification box if the user clicks outside of it
+        window.onclick = function(event) {
+            if (!event.target.matches('#notif-icon')) {
+                var notifBox = document.getElementById('notif-box');
+                if (notifBox.style.display === "block") {
+                    notifBox.style.display = "none";
+                }
+            }
+        };
+    </script>
+
+	<script>
+		$(document).ready(function() {
+			$('.notification').on('click', function() {
+				var notificationId = $(this).data('notification-id');
+				var url = '{{ route("reset.notification", ":id") }}';
+				url = url.replace(':id', notificationId);
+				$.ajax({
+					headers: {'X-CSRF-TOKEN': $('meta[name="csrf_token"]').attr('content')},
+					type: 'POST',
+					data: {// change data to this object
+						_token : $('meta[name="csrf-token"]').attr('content'),
+					},
+					url: url,
+					success: function(response) {
+						// Tambahkan logika atau tindakan setelah notifikasi berhasil diupdate
+						console.log(response.message);
+						// Contoh: hilangkan notifikasi dari tampilan
+						$('#notif-count').remove();
+						$(this).fadeOut();
+					},
+					error: function(error) {
+						console.error('Error:', error);
+						// Handle error jika ada
+					}
+				});
+			});
+		});
+	</script>
+	<!--// notif-script -->
 	
 	<!-- js file -->
 </body>
