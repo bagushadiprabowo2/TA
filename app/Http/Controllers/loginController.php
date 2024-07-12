@@ -8,9 +8,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
+use App\Http\Controllers\NotifikasiController;
 
 class loginController extends Controller
 {
+    protected $notifikasiController;
+
+    public function __construct(NotifikasiController $notifikasiController)
+    {
+        $this->notifikasiController = $notifikasiController;
+    }
+
     public function index(Request $request){
         if(!Session::get('login')){
             return redirect('login.login')->with('alert','Kamu harus login dulu');
@@ -40,7 +48,13 @@ class loginController extends Controller
 			else{
 				Session::put('notif_pencarian', "hapus");
 			}
-           return view('front end.index', ['usaha' => $usaha, 'saldo'=>$saldo, 'riwayat_transaksi'=>$riwayat_transaksi,'pengguna'=>$pengguna]);
+            
+            $senderType = session()->get('level') == 3 ? 'pelapak' : 'pelanggan';
+            $notifikasiCounts = $this->notifikasiController->getCountByDestinationId(session()->get('id_pengguna'), $senderType);
+            $notifications = $this->notifikasiController->getByDestinationId(session()->get('id_pengguna'), $senderType);
+           return view('front end.index', ['usaha' => $usaha, 'saldo'=>$saldo, 
+           'riwayat_transaksi'=>$riwayat_transaksi,'pengguna'=>$pengguna,
+            'notifikasiCounts'=>$notifikasiCounts, 'notifications' => $notifications]);
         }
     }
 

@@ -210,7 +210,6 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
                           <td style="background:lightblue; font-weight:bold;">Opsi</td>
                           <td>
 						<form action="{{url('transaksi/status/edit/2')}}/{{$result->id_transaksi}}" method="get">
-						<button type="submit" class="btn btn-danger" name="batal" >OK</button>
 						@if (!isset(explode('//Pesan Pembatalan: ', $result->deskripsi)[1]))
 						@if (count($upload) == 0)
                         <button onclick="return confirm('Apakah anda yakin ingin membatalkan pesanan?')" type="submit" class="btn btn-danger" name="batal" >Batal pesan</button>
