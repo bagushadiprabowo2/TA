@@ -110,7 +110,11 @@ class transaksiController extends Controller
         $saldo = \DB::table('saldo')->where('id_pengguna', session()->get('id_pengguna'))->value('total');
         $topup = DB::table('top_up')->get();
         $pengguna = DB::table('pengguna')->where('id_pengguna',$id)->get();
-        return view('front end.topup',['pengguna'=>$pengguna, 'topup' => $topup,'saldo'=>$saldo]);
+        $senderType = session()->get('level') == 3 ? 'pelapak' : 'pelanggan';
+        $notifikasiCounts = $this->notifikasiController->getCountByDestinationId(session()->get('id_pengguna'), $senderType);
+        $notifications = $this->notifikasiController->getByDestinationId(session()->get('id_pengguna'), $senderType);
+        return view('front end.topup',['pengguna'=>$pengguna, 'topup' => $topup,'saldo'=>$saldo,
+        'notifikasiCounts'=>$notifikasiCounts, 'notifications' => $notifications]);
 
     }
 
@@ -118,7 +122,11 @@ class transaksiController extends Controller
     {
         $saldo = \DB::table('saldo')->where('id_pengguna', session()->get('id_pengguna'))->value('total');
         $pengguna = DB::table('pengguna')->where('id_pengguna', session()->get('id_pengguna'))->get();
-        return view('front end.contact',['saldo'=>$saldo,'pengguna'=>$pengguna]);
+        $senderType = session()->get('level') == 3 ? 'pelapak' : 'pelanggan';
+        $notifikasiCounts = $this->notifikasiController->getCountByDestinationId(session()->get('id_pengguna'), $senderType);
+        $notifications = $this->notifikasiController->getByDestinationId(session()->get('id_pengguna'), $senderType);
+        return view('front end.contact',['saldo'=>$saldo,'pengguna'=>$pengguna,
+        'notifikasiCounts'=>$notifikasiCounts, 'notifications' => $notifications]);
 
     }
 
@@ -195,7 +203,7 @@ class transaksiController extends Controller
         // dd($request);
         $tanggal_pesan = date('Y-m-d', strtotime($request->tanggal_pesan));
         $tanggal_hunting = date('Y-m-d', strtotime($request->tanggal_hunting));
-        $harga_ = $request->harga * 30 / 100;
+        $harga_ = $request->harga;
         $tot_pemesan = \DB::table('saldo')->where('id_pengguna', session()->get('id_pengguna'))->value('total');
         $selisih = $tot_pemesan - $request->harga;
         // dd($selisih);
@@ -231,7 +239,7 @@ class transaksiController extends Controller
             ]);
             return redirect('index');
         } else {
-            return redirect('/transaksi/topup/' . session()->get('id_pengguna'))->with('error', '');
+            return redirect('/transaksi/topup/' . session()->get('id_pengguna'))->with('error', 'insufficient');
         }
     }
     public function show()

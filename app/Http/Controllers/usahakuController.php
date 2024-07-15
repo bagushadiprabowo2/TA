@@ -4,24 +4,38 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\NotifikasiController;
 
 
 class usahakuController extends Controller
 {
+    protected $notifikasiController;
+
+    public function __construct(NotifikasiController $notifikasiController)
+    {
+        $this->notifikasiController = $notifikasiController;
+    }
+
 	public function index()
     {
         $pengguna = DB::table('pengguna')->where('id_pengguna', session()->get('id_pengguna'))->get();
         $saldo = \DB::table('saldo')->where('id_pengguna', session()->get('id_pengguna'))->value('total');
         $cek = DB::table('usaha')->where('id_pelapak', session()->get('id_pengguna'))->count();
+
+        $senderType = session()->get('level') == 3 ? 'pelapak' : 'pelanggan';
+        $notifikasiCounts = $this->notifikasiController->getCountByDestinationId(session()->get('id_pengguna'), $senderType);
+        $notifications = $this->notifikasiController->getByDestinationId(session()->get('id_pengguna'), $senderType);
         // dd($cek > 0);
         if ($cek > 0) {
             $id_usaha = \DB::table('usaha')->where('id_pelapak', session()->get('id_pengguna'))->value('id_usaha');
             $tampilkan = DB::table('usaha')->where('id_usaha',$id_usaha)->get();
             $paket = DB::table('paket')->where('id_usaha',$id_usaha)->get();
-            return view('front end.usahaku',['tampilkan'=>$tampilkan, 'paket' => $paket,'saldo'=>$saldo,'pengguna'=>$pengguna]);
+            return view('front end.usahaku',['tampilkan'=>$tampilkan, 'paket' => $paket,'saldo'=>$saldo,'pengguna'=>$pengguna,
+            'notifikasiCounts'=>$notifikasiCounts, 'notifications' => $notifications]);
     	} else {
     	$kota = DB::table('kota')->get();
-	       return view('front end.daftarusaha',['kota' => $kota,'saldo'=>$saldo]);
+	       return view('front end.daftarusaha',['kota' => $kota,'saldo'=>$saldo,
+           'notifikasiCounts'=>$notifikasiCounts, 'notifications' => $notifications]);
     	}
     }
 

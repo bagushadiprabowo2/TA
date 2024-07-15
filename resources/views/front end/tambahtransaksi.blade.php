@@ -156,7 +156,7 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
     </div>
     <div class="form-group">
       <label for="exampleInputEmail1">Tanggal Pesan</label>
-      <input type="text" class="form-control" name="tanggal_pesan" id="tglpesan" readonly="" value="{{ date('d/m/Y') }}">
+      <input type="date" class="form-control" name="tanggal_pesan" id="tglpesan" readonly="" value="{{ date('Y-m-d') }}" min="{{ date('d/m/Y') }}">
     </div>
     <div class="form-group">
       <label for="exampleInputPassword1">Tanggal Hunting</label>
